@@ -23,46 +23,36 @@ mtcars$cyl <- as.factor(mtcars$cyl)
 
 ## Overview
 The assignment requires an investigation into the R data set "mtcars".
-The data set is for a collection of cars, and we are asked in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). We are particularly interested in the following two questions:
+The data set is for a collection of cars, and we are asked :
 
-- Is an automatic or manual transmission better for MPG
-- Quantify the MPG difference between automatic and manual transmissions
+- Is an automatic or manual transmission better for MPG ?
+- Quantify the MPG difference between automatic and manual transmissions ?
 
 ## The art of statistics
-In a way statistics is nothing more than dumb number crunching. The algorithm applied (however sophisticated) is not capable of giving an interpretation to the outcome nor understanding the wider context. This paper attempts to apply statistics to find answers to the questions asked above, but before we jump into the math, let's summarise what we know about the topic (and yes, that knowledge is heavily loaded with prejudices, hidden agenda's etc ...).
-The data set under investigation was extracted from the 1974 Motor Trend US magazine, a time when the author was still in the business of playing with toy cars. Winding forward a bit in time, knowledge of mechanical engineering was added and complicated formula's studied. It seems unlikely Newton knew about the car business but in his famous law $F=ma$ he got to the core issue: weight is everything. No mentioning of automatic transmission yet in Newton's time. Being European, I'm more than convinced that automatic transmission is a sure recipe for consuming extra fuel and should be left to the guys who can't drive a car. (Never mind I seriously consider to join that last mentioned team ...)
-So let's move on and explore that famous data set and after that see if the math theory supports my hypotheses that automatic transmission consumes definitely more fuel than a manual transmission.
+In a way statistics resembles dumb number crunching. The algorithm applied (however sophisticated) is not capable of giving an *interpretation* to the outcome nor understanding the wider context. This paper attempts to apply statistics to find answers to the questions asked above, but before we jump into the math, let's summarise what we know about the topic (and yes, that knowledge is heavily loaded with prejudices, hidden agenda's etc ...).
+The data set under investigation was extracted from the 1974 Motor Trend US magazine, a time when myself I was still in the business of playing with toy cars. Moving forward in time, I increased knowledge of mechanical engineering and complicated formula's were studied. It seems unlikely Newton knew about the car business but in his famous law $F=ma$ he got to the core issue: weight is everything. No mentioning of automatic transmissions yet in Newton's time. Being European, I'm more than convinced that automatic transmissions are a sure recipe for consuming extra fuel and should be left to the guys who can't drive a car. (Never mind I seriously consider to join that last mentioned team ...)
+So let's move on and explore that famous data set and after that see if the math theory supports my hypotheses that an automatic transmission consumes definitely more fuel than a manual transmission.
 
 
 ## Exploratory data analysis
-The data frame has 32 observations on 11 variables. It is noted that the split between automatic and manual transmission cars is unbalanced.
-```{r}
+The data frame has 32 observations on 11 variables. 19 observations are for automatic transmission cars and 13 for manual transmission cars. There are no records which allow to compare manual vs automatic transmission for the same models (no paired test possible).
 
-table(mtcars$am)
-
-```
-
-Looking at the 2 simple box plots in the appendix shows that the automatic transmission cars in the data set consume clearly less fuel than manual transmission cars. (thanks, there goes my hypotheses) However, remember Newton, the second box plot shows that in this data set the automatic cars tend to be much heavier.
-
-The scatterplots in the appendix reveal that other factors than transmission type are more correlated with MPG. Let's see what regression models have to say about that.
+Looking at the 2 simple box plots in the appendix shows that the automatic transmission cars in the data set consume clearly less fuel than manual transmission cars. (Thanks, there goes my hypotheses.) However - remember Newton - the second box plot shows that in this data set the automatic cars tend to be much heavier. The scatterplots in the appendix reveal that other factors than transmission type are more correlated with MPG. Let's see what regression models have to say about that.
 
 ## The science of statistics
-Considering the data set is very small, we can afford to do a best subset selection trying out all possible combinations.
-The chunk of code below suggest that 3 variables (following the Bayesian information criteria) provides an optimal result. These 3 variables are wt, qsec and transmission type. (see appendix for plots of Adjr2 and BIC)
-Weight was predicted, by why qsec ? It seems obvious that qsec (1/4 mile time) is a result of applying horse power (hp) (generated from a certain displacement in cu.in. engine) to a weight and as such it is understandable that the algorithm detected that this variable explains a lot of the variance. Transmission type does not add much.
+Considering the data set is very small, we can afford to do a best subset selection for linear regression models trying out all possible combinations.
+The chunk of code below suggest that 3 variables (following the Bayesian information criteria) provides an optimal result. These 3 variables are wt, qsec and transmission type. (see appendix for Best Subset plots of Adjr2 and BIC).Weight was predicted by Newton already, but why qsec (1/4 mile time) ? It seems obvious that qsec is a result of applying horse power (hp) (generated from a certain displacement in cu.in. engine) to a weight and as such it is understandable that the algorithm detected that this variable explains a lot of the variance. Transmission type does not remove much variance.
 ```{r}
-car.full <- regsubsets(mpg ~., data = mtcars)
-car.sum <-summary(car.full)
-car.sum$which[1:4, 5:10]
+car.sum <- summary(regsubsets(mpg ~., data = mtcars))
+car.sum$which[which.min(car.sum$bic), 5:10]
 ```
 
-Let's double check above by having a hierarchy of models and applying anova. It shows that the third model is on the edge of still being significant.
+Let's double check above by having a hierarchy of models and applying anova. It shows that the third model is on the edge ($p < 0.05$) of still being significant. The impact of transmission type on fuel consumption in this data set is not strong.
 ```{r}
 car.fit1 <- lm(mpg ~ wt, data = mtcars)
-car.fit2 <- lm(mpg ~ wt + hp, data = mtcars)
+car.fit2 <- lm(mpg ~ wt + qsec, data = mtcars)
 car.fit3 <- lm(mpg ~ wt + qsec + am, data = mtcars)
 anova(car.fit1, car.fit2, car.fit3)
-
 ```
 
 
@@ -78,35 +68,40 @@ mt$dfbeta <- dfbeta(mt.fit)
 mt$dffit <- dffits(mt.fit)
 mt$leverage <- hatvalues(mt.fit)
 mt$covariance.ratios <- covratio(mt.fit)
-
+mt$fitted.values <- mt.fit$fitted.values
 
 ```
 
-A last check of regression diagnositics shows a couple of indicators (like VIF) are just acceptable. The appendix contains the diagnostics plots. The selected regression model shows that the coefficient for Manual transmission type is 2.9 (=2.9 MPG extra compared to automatic). This is also illustrated in the scatterplot (MPG vs Weight by Transmission Type) in which the manual regression line has a higher negative slope (higher impact).
-I have to conclude that my hypotheses is not supported by this data set.
+The appendix contains the standard diagnostics plots for the selected model (mpg~wt+qsec+am) and show a slight deviation from a normal distribution. VIF shows a slight multicollinearity effect. The selected regression model shows that the coefficient for Manual transmission type is 2.9 (=2.9 MPG extra compared to automatic). 
+I have to conclude that my initial hypotheses is not supported by this data set. Statististics are in favour of supporting the hypotheses that manual transmission cars consume more fuel than automatic transmission cars although the effect is small.
 ```{r}
-contrasts(mt$am)
-summary(mt.fit)
+coef(mt.fit); confint(mt.fit) 
 vif(mt.fit)
-outlierTest(mt.fit)
+
 ```
-
-
 
 ## Appendix : graphs
-### Exploration : Simple Boxplots
 ```{r , echo=FALSE}
-par(mfrow=c(1,2))
+par(mfrow=c(2,2))
 boxplot(mpg ~ am, data=mtcars,
         main = "MPG by Type of Transmission",
-        ylab = "Weight (lb/1000")
+        ylab = "MPG (miles per gallon)")
 boxplot(wt ~ am, data=mtcars,
         main ="Weight by Type of Transmission",
         ylab = "Weight (lb/1000)")
+plot(car.sum$adjr2, xlab = "# of variables in regression",
+                    ylab = "Adjusted R square",
+                    main = "Best Subset selection",
+                    type = "l")
+plot(car.sum$bic,   xlab = "# of variables in regression",
+                    main = "Best Subset selection",
+                    ylab = "BIC",
+                    type = "l")
+plot(mt.fit)
 par(mfrow=c(1,1))
 ```
 
-### Exploration : Scatterplots
+
 ```{r , echo=FALSE}
 scatterplotMatrix( ~ qsec + wt + mpg + disp  + hp | am , data = mtcars,
                    spread = FALSE, 
@@ -133,23 +128,45 @@ scatterplot(mpg ~ wt | am, data = mtcars,
 
 ```
 
-### Best subset selection
-```{r , echo=FALSE}
-par(mfrow=c(1,2))
-plot(car.sum$adjr2, xlab = "number of variables",
-                    ylab = "Adjusted R square",
-                    type = "l")
-plot(car.sum$bic, xlab = "number of variables",
-                    ylab = "BIC",
-                    type = "l")
-par(mfrow=c(1,1))
-```
 
-### Validation of the regression model (lm(mpg ~ wt + qsec + am, data = mtcars)
-```{r}
-qqPlot(mt.fit)
-avPlots(mt.fit)
-influencePlot(mt.fit)
+
+```{r , echo=FALSE}
+par(mfrow=c(2,2))
+
+
+par(mfrow=c(1,1))
+influencePlot(mt.fit, main="influencePlot",
+              sub = "size of circles represent influence")
+
+#qqPlot(mt.fit)
+#avPlots(mt.fit)
+#outlierTest(mt.fit)
+
+# #---Histogram of studentized residuals---
+# 
+# hist(mt$studentized.residuals)
+# hist(rstudent(mt.fit))
+# 
+# #--Plot of residuals against fitted (predicted) values, with a flat line at the mean--
+# plot(mt.fit$fitted.values,rstandard(mt.fit))
+# abline(0, 0)
+
+# histogram<-ggplot(mt, aes(studentized.residuals)) + 
+#          theme(legend.position = "none") + 
+#          geom_histogram(aes(y=..density..), colour="black", fill="white") +
+#          labs(x = "Studentized Residual", y = "Density")
+# histogram + stat_function(fun = dnorm, 
+#                           args = list(mean = mean(mt$studentized.residuals, na.rm = TRUE), sd = sd(mt$studentized.residuals, na.rm = TRUE)), colour = "red", size = 1)
+# 
+# 
+# scatter <- ggplot(mt, aes(fitted.values, studentized.residuals))
+# scatter + geom_point() + geom_smooth(method = "lm", colour = "Red")+ labs(x = "Fitted Values", y = "Studentized Residual") 
+# 
+
+# qqplot.resid <- qplot(sample = mt$studentized.residuals, stat="qq") + labs(x = "Theoretical Values", y = "Observed Values") 
+# qqplot.resid
+
+
 ```
 
 ## References
