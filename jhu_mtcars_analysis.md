@@ -15,19 +15,20 @@ The data set is for a collection of cars, and we are asked :
 - Quantify the MPG difference between automatic and manual transmissions ?
 
 ## The art of statistics
-In a way statistics resembles dumb number crunching. The algorithm applied (however sophisticated) is not capable of giving an *interpretation* to the outcome nor understanding the wider context. This paper attempts to apply statistics to find answers to the questions asked above, but before we jump into the math, let's summarise what we know about the topic (and yes, that knowledge is heavily loaded with prejudices, hidden agenda's etc ...).
-The data set under investigation was extracted from the 1974 Motor Trend US magazine, a time when myself I was still in the business of playing with toy cars. Moving forward in time, I increased knowledge of mechanical engineering and complicated formula's were studied. It seems unlikely Newton knew about the car business but in his famous law $F=ma$ he got to the core issue: weight is everything. No mentioning of automatic transmissions yet in Newton's time. Being European, I'm more than convinced that automatic transmissions are a sure recipe for consuming extra fuel and should be left to the guys who can't drive a car. (Never mind I seriously consider to join that last mentioned team ...)
-So let's move on and explore that famous data set and after that see if the math theory supports my hypotheses that an automatic transmission consumes definitely more fuel than a manual transmission.
+In a way statistics resembles dumb number crunching. The algorithm applied (however sophisticated) is not capable of giving an *interpretation* to the outcome nor understanding the wider context. This paper attempts to apply statistics to find answers to the questions asked above, but before we jump into the math, let's summarise what we know about the topic.
+The data set under investigation was extracted from the 1974 Motor Trend US magazine, a time when myself I was still in the business of playing with toy cars. 
+From the theory of mechanics we now that weight is the most influential factor in fuel consumption ($F=ma$). Automatic transmissions normally lead to consuming extra fuel. 
+So let's move on and explore the data set and after that see if the math theory supports the hypotheses that an automatic transmission consumes more fuel than a manual transmission.
 
 
 ## Exploratory data analysis
 The data frame has 32 observations on 11 variables. 19 observations are for automatic transmission cars and 13 for manual transmission cars. There are no records which allow to compare manual vs automatic transmission for the same models (no paired test possible).
 
-Looking at the 2 simple box plots in the appendix shows that the automatic transmission cars in the data set consume clearly less fuel than manual transmission cars. (Thanks, there goes my hypotheses.) However - remember Newton - the second box plot shows that in this data set the automatic cars tend to be much heavier. The scatterplots in the appendix reveal that other factors than transmission type are more correlated with MPG. Let's see what regression models have to say about that.
+Looking at the 2 simple box plots in the appendix shows that the automatic transmission cars in the data set have lower MPG (=higher fuel consumption) than manual transmission cars. The second box plot shows that in this data set the automatic cars tend to be much heavier. The scatterplots in the appendix reveal that other factors than transmission type are more correlated with MPG. Let's see what regression models have to say about that.
 
 ## The science of statistics
 Considering the data set is very small, we can afford to do a best subset selection for linear regression models trying out all possible combinations.
-The chunk of code below suggest that 3 variables (following the Bayesian information criteria) provides an optimal result. These 3 variables are wt, qsec and transmission type. (see appendix for Best Subset plots of Adjr2 and BIC).Weight was predicted by Newton already, but why qsec (1/4 mile time) ? It seems obvious that qsec is a result of applying horse power (hp) (generated from a certain displacement in cu.in. engine) to a weight and as such it is understandable that the algorithm detected that this variable explains a lot of the variance. Transmission type does not remove much variance.
+The chunk of code below suggest that 3 variables (following the Bayesian information criteria) provides an optimal result. These 3 variables are wt, qsec and transmission type. (see appendix for Best Subset plots of Adjr2 and BIC).Weight was predicted by Newton's law already, but why qsec (1/4 mile time) ? It seems obvious that qsec is a result of applying horse power (hp) (generated from a certain displacement in cu.in. engine) to a weight and as such it is understandable that the algorithm detected that this variable explains a lot of the variance. Transmission type does not remove much variance.
 
 ```r
 car.sum <- summary(regsubsets(mpg ~., data = mtcars))
@@ -67,7 +68,7 @@ anova(car.fit1, car.fit2, car.fit3)
 
 
 The appendix contains the standard diagnostics plots for the selected model (mpg~wt+qsec+am) and show a slight deviation from a normal distribution. VIF shows a slight multicollinearity effect. The selected regression model shows that the coefficient for Manual transmission type is 2.9 (=2.9 MPG extra compared to automatic). 
-I have to conclude that my initial hypotheses is not supported by this data set. Statististics are in favour of supporting the hypotheses that manual transmission cars consume more fuel than automatic transmission cars although the effect is small.
+I have to conclude that my initial hypotheses is supported by this data set. Statististics are in favour of supporting the hypotheses that manual transmission cars consume slightly less fuel than automatic transmission cars although the effect is small.
 
 ```r
 coef(mt.fit); confint(mt.fit) 
